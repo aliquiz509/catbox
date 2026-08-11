@@ -11,6 +11,10 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Indiquer à Express qu'il est derrière un Reverse Proxy (Render, Vercel, Railway)
+// Nécessaire pour éviter l'erreur ERR_ERL_UNEXPECTED_X_FORWARDED_FOR
+app.set('trust proxy', 1);
+
 // En-têtes de sécurité
 app.use(helmet({
   contentSecurityPolicy: false // Permet le chargement des ressources locales et externes
@@ -24,7 +28,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
-  message: { success: false, error: 'Trop de requêtes. Veuillez reessayer dans 15 minutes.' }
+  message: { success: false, error: 'Trop de requêtes. Veuillez réessayer dans 15 minutes.' }
 });
 app.use('/api/', limiter);
 
@@ -91,10 +95,11 @@ app.post('/api/upload', (req, res) => {
         contentType: req.file.mimetype
       });
 
-      // Envoi de la requête à l'API Catbox
+      // Envoi de la requête à l'API Catbox avec User-Agent explicite
       const response = await axios.post('https://catbox.moe/user/api.php', form, {
         headers: {
-          ...form.getHeaders()
+          ...form.getHeaders(),
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         },
         timeout: 120000 // 2 minutes de timeout
       });
